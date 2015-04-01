@@ -23,7 +23,16 @@ strip = lStrip . rStrip
 
 --gets all the headers (regardless of whether they're local or not)
 getHeaders :: String -> [String]
-getHeaders = getincludes . nonull . cleanup
+getHeaders = getincludes . nonnull . cleanup
   where cleanup     = map strip . lines
         nonnull     = filter (not . null)
         getincludes = filter ((==)'#' . head)
+
+
+--works for now but make sure that quotes can't be included in filenames
+getLocals :: [String] -> [String]
+getLocals = filter (any (=='"'))
+
+
+getFiles :: String -> [String]
+getFiles = getDependencies . getLocals . getHeaders
