@@ -19,3 +19,11 @@ lStrip = dropWhile isSpace
 
 strip :: String -> String
 strip = lStrip . rStrip
+
+
+--gets all the headers (regardless of whether they're local or not)
+getHeaders :: String -> [String]
+getHeaders = getincludes . nonull . cleanup
+  where cleanup     = map strip . lines
+        nonnull     = filter (not . null)
+        getincludes = filter ((==)'#' . head)
