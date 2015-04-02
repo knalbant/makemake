@@ -36,3 +36,14 @@ getLocals = filter (any (=='"'))
 
 getFiles :: String -> [String]
 getFiles = getDependencies . getLocals . getHeaders
+
+
+
+{-prints out the line which has the .o:
+dotOs :: [String] -> String -> String
+dotOs headers fileName =
+  where dotOd = fileName ++ ".o"
+        headersO = map (++ ".o")  -}
+
+main = do
+     args <- getArgs
