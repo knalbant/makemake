@@ -5,7 +5,6 @@ import System.FilePath
 import System.Directory
 
 
-
 --accepts the lines with local header files and returns
 --the names of the headers stripped of the .h
 getDependencies :: [String] -> [String]
@@ -35,11 +34,17 @@ getHeaders = getincludes . nonnull . cleanup
 
 --Gets the filenames of local headers 
 getLocals :: [String] -> [String]
-getLocals = filter (any (=='"'))
+getLocals = filter (elem '"') 
 
-getFiles :: String -> [String]
-getFiles = getDependencies . getLocals . getHeaders
 
+--returns the names of the local headers stripped of extension 
+getLocalHeaders :: String -> [String]
+getLocalHeaders = getDependencies . getLocals . getHeaders
+
+
+--returns a filename with the extension removed 
+removeExtension :: String -> String
+removeExtension = takeWhile (/='.') 
 
 --the default compilation flags
 defaultFlags :: String
@@ -56,15 +61,55 @@ dotOs headers fileName =
   where dotOd = fileName ++ ".o"
         headersO = map (++ ".o")  -}
 
+--returns a string corresponding to the instructions to compile the object files and create the executable in the makefile
+executableString executableName additionalFlags files  = 
+  executableName ++ ":" ++ " " ++ objectFiles ++ "\n\t" ++ "g++ " ++ defaultFlags ++ " " 
+  ++ "-o " ++ executableName ++ " " ++ additionalFlags ++ " " ++ objectFiles ++ "\n\n"   
+
+
+  where objectFiles = unwords $ map ( (++".o") . removeExtension) files      
+
+
+objectFileString
+
+--there has gotta be a better way to do this
+stringListFromIOList :: [IO String] -> IO [String]
+stringListFromIOList [] = return []
+stringListFromIOList (x:xs) = do
+
+  unWrapped <- x
+  restunWrapped <- stringListFromIOList xs
+  return (unWrapped: restunWrapped)
+
+--getFilesAndHeaders :: IO (String, [String])
+getFilesAndHeaders = do 
+  files <- getDirectoryContents "./cFiles"
+  let cFiles = getCFiles files 
+  let cFilesx = map ("./cFiles/" ++) cFiles 
+  let ioContents = map readFile cFilesx  
+  fileContents <- stringListFromIOList ioContents 
+  let headers = map getLocalHeaders fileContents
+  return $ zip cFiles headers
+
+--takes the string list of command line options and transforms into from suitable to be directly written to makefile
+makeFlagString :: [String] -> String 
+makeFlagString = unwords . map ( "-" ++) 
+
 main = do
-     
      additionalArgs <- getArgs
+     if null additionalArgs
+     then do 
+      putStrLn "Usage: makemake.sh executable_name"
+     else do 
+      let executableName  = head additionalArgs
+      let additionalFlags = makeFlagString $ tail additionalArgs
 
-     files <- getDirectoryContents "./cFiles"
-    
-     let cFiles = getCFiles files 
+      filesAndHeaders <- getFilesAndHeaders 
+   
+
+      print filesAndHeaders  
+      putStr $ executableString executableName additionalFlags (map fst filesAndHeaders) 
+
+      return ()
 
 
-     mapM_ putStrLn cFiles
-
-     mapM_ putStrLn additionalArgs
