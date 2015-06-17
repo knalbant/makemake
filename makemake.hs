@@ -1,5 +1,9 @@
 import Data.List
 import Data.Char (isSpace)
+import System.Environment
+import System.FilePath
+import System.Directory
+
 
 --accepts the lines with local header files and returns
 --the names of the headers stripped of the .h
@@ -26,7 +30,7 @@ getHeaders :: String -> [String]
 getHeaders = getincludes . nonnull . cleanup
   where cleanup     = map strip . lines
         nonnull     = filter (not . null)
-        getincludes = filter ((==)'#' . head)
+        getincludes = filter ((==) '#' . head)
 
 
 --works for now but make sure that quotes can't be included in filenames
@@ -38,6 +42,10 @@ getFiles :: String -> [String]
 getFiles = getDependencies . getLocals . getHeaders
 
 
+--getCFiles :: [String] -> [String]
+getCFiles = filter (isCppFile . getExtension)  
+  where getExtension  = dropWhile (/='.')
+        isCppFile ext = ext == ".c" || ext == ".cpp"
 
 {-prints out the line which has the .o:
 dotOs :: [String] -> String -> String
@@ -46,4 +54,9 @@ dotOs headers fileName =
         headersO = map (++ ".o")  -}
 
 main = do
-     args <- getArgs
+     
+     --getArgs >>= mapM_ putStrLn 
+
+     files <- getDirectoryContents "./"
+
+     mapM_ putStrLn files
