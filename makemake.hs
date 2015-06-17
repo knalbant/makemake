@@ -5,12 +5,12 @@ import System.FilePath
 import System.Directory
 
 
+
 --accepts the lines with local header files and returns
 --the names of the headers stripped of the .h
 getDependencies :: [String] -> [String]
 getDependencies = map getDependencies'
   where getDependencies' = takeWhile (/='.') . tail . dropWhile (/='"')
-
 
 --remove trailing whitespace
 --replace with something more efficient later
@@ -33,14 +33,17 @@ getHeaders = getincludes . nonnull . cleanup
         getincludes = filter ((==) '#' . head)
 
 
---works for now but make sure that quotes can't be included in filenames
+--Gets the filenames of local headers 
 getLocals :: [String] -> [String]
 getLocals = filter (any (=='"'))
-
 
 getFiles :: String -> [String]
 getFiles = getDependencies . getLocals . getHeaders
 
+
+--the default compilation flags
+defaultFlags :: String
+defaultFlags = "-ansi -Wall -g"
 
 --getCFiles :: [String] -> [String]
 getCFiles = filter (isCppFile . getExtension)  
@@ -55,8 +58,13 @@ dotOs headers fileName =
 
 main = do
      
-     --getArgs >>= mapM_ putStrLn 
+     additionalArgs <- getArgs
 
-     files <- getDirectoryContents "./"
+     files <- getDirectoryContents "./cFiles"
+    
+     let cFiles = getCFiles files 
 
-     mapM_ putStrLn files
+
+     mapM_ putStrLn cFiles
+
+     mapM_ putStrLn additionalArgs
